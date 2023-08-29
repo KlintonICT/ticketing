@@ -70,7 +70,7 @@ it('create a ticket with valid inputs', async () => {
   await request(app)
     .post('/api/tickets')
     .set('Cookie', global.signin())
-    .send({ title: 'ticket-title', price: 20 })
+    .send({ title, price: 20 })
     .expect(201);
 
   tickets = await Ticket.find({});
