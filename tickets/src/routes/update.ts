@@ -7,7 +7,9 @@ import {
 } from '@klinton-org/ticketing-common';
 import { body } from 'express-validator';
 
+import { TicketCreatePublisher } from '../events/publishers/ticket-update-publisher';
 import { Ticket } from '../models/ticket';
+import { natsWrapper } from '../nats-wrapper';
 
 const router = express.Router();
 
@@ -37,6 +39,12 @@ router.put(
       price: req.body.price,
     });
     await ticket.save();
+    new TicketCreatePublisher(natsWrapper.client).publish({
+      id: ticket.id,
+      title: ticket.title,
+      price: ticket.price,
+      userId: ticket.userId,
+    });
 
     res.send(ticket);
   }
