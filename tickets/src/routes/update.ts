@@ -4,10 +4,11 @@ import {
   validateRequest,
   NotFoundError,
   NotAuthenticatedError,
+  BadRequestError,
 } from '@klinton-org/ticketing-common';
 import { body } from 'express-validator';
 
-import { TicketCreatePublisher } from '../events/publishers/ticket-update-publisher';
+import { TicketUpdatedPublisher } from '../events/publishers/ticket-update-publisher';
 import { Ticket } from '../models/ticket';
 import { natsWrapper } from '../nats-wrapper';
 
@@ -30,6 +31,10 @@ router.put(
       throw new NotFoundError();
     }
 
+    if (ticket.orderId) {
+      throw new BadRequestError('Cannot edit a reserved ticket');
+    }
+
     if (ticket.userId !== req.currentUser!.id) {
       throw new NotAuthenticatedError();
     }
@@ -39,7 +44,7 @@ router.put(
       price: req.body.price,
     });
     await ticket.save();
-    new TicketCreatePublisher(natsWrapper.client).publish({
+    new TicketUpdatedPublisher(natsWrapper.client).publish({
       id: ticket.id,
       title: ticket.title,
       price: ticket.price,
